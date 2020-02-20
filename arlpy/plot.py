@@ -204,8 +204,8 @@ def hold(enable=True):
 
     >>> import arlpy.plot
     >>> oh = arlpy.plot.hold()
-    >>> arlpy.plot.plot([0,10], [0,10], color='blue', legend='A')
-    >>> arlpy.plot.plot([10,0], [0,10], marker='o', color='green', legend='B')
+    >>> arlpy.plot.plot([0,10], [0,10], color='blue', legend_label='A')
+    >>> arlpy.plot.plot([10,0], [0,10], marker='o', color='green', legend_label='B')
     >>> arlpy.plot.hold(oh)
     """
     rv = _hold_enable(enable)
@@ -235,8 +235,8 @@ class figure:
 
     >>> import arlpy.plot
     >>> with arlpy.plot.figure(title='Demo 2', width=500):
-    >>>     arlpy.plot.plot([0,10], [0,10], color='blue', legend='A')
-    >>>     arlpy.plot.plot([10,0], [0,10], marker='o', color='green', legend='B')
+    >>>     arlpy.plot.plot([0,10], [0,10], color='blue', legend_label='A')
+    >>>     arlpy.plot.plot([10,0], [0,10], marker='o', color='green', legend_label='B')
 
     It can even be used as a context manager to work with Bokeh functions directly:
 
@@ -343,14 +343,14 @@ def plot(x, y=None, fs=None, maxpts=10000, pooling=None, color=None, style='soli
     :param ytype: y-axis type ('auto', 'linear', 'log', etc)
     :param width: figure width in pixels
     :param height: figure height in pixels
-    :param legend: legend text
+    :param legend_label: legend text
     :param interactive: enable interactive tools (pan, zoom, etc) for plot
     :param hold: if set to True, output is not plotted immediately, but combined with the next plot
 
     >>> import arlpy.plot
     >>> import numpy as np
-    >>> arlpy.plot.plot([0,10], [1,-1], color='blue', marker='o', filled=True, legend='A', hold=True)
-    >>> arlpy.plot.plot(np.random.normal(size=1000), fs=100, color='green', legend='B')
+    >>> arlpy.plot.plot([0,10], [1,-1], color='blue', marker='o', filled=True, legend_label='A', hold=True)
+    >>> arlpy.plot.plot(np.random.normal(size=1000), fs=100, color='green', legend_label='B')
     """
     global _figure, _color
     x = _np.array(x, ndmin=1, dtype=_np.float, copy=False)
@@ -394,15 +394,17 @@ def plot(x, y=None, fs=None, maxpts=10000, pooling=None, color=None, style='soli
         if len(x) > len(y):
             x = x[:len(y)]
         _figure.add_layout(_bmodels.Label(x=5, y=5, x_units='screen', y_units='screen', text=desc, text_font_size="8pt", text_alpha=0.5))
+    opts = {} if legend_label is None else {'legend_label': legend_label }
     if style is not None:
-        _figure.line(x, y, line_color=color, line_dash=style, line_width=thickness, legend=legend)
+        _figure.line(x, y, line_color=color, line_dash=style, line_width=thickness, **opts)
     if marker is not None:
-        scatter(x[::(mskip+1)], y[::(mskip+1)], marker=marker, filled=filled, size=size, color=color, legend=legend, hold=True)
+        scatter(x[::(mskip+1)], y[::(mskip+1)], marker=marker, filled=filled, size=size, color=color, hold=True, **opts)
     if not hold and not _hold:
         _show(_figure)
         _figure = None
 
-def scatter(x, y, marker='.', filled=False, size=6, color=None, title=None, xlabel=None, ylabel=None, xlim=None, ylim=None, xtype='auto', ytype='auto', width=None, height=None, legend=None, hold=False, interactive=None):
+def scatter(x, y, marker='.', filled=False, size=6, color=None, title=None, xlabel=None, ylabel=None, xlim=None, ylim=None,
+        xtype='auto', ytype='auto', width=None, height=None, legend_label=None, hold=False, interactive=None):
     """Plot a scatter plot.
 
     :param x: x data
@@ -420,7 +422,7 @@ def scatter(x, y, marker='.', filled=False, size=6, color=None, title=None, xlab
     :param ytype: y-axis type ('auto', 'linear', 'log', etc)
     :param width: figure width in pixels
     :param height: figure height in pixels
-    :param legend: legend text
+    :param legend_label: legend text
     :param interactive: enable interactive tools (pan, zoom, etc) for plot
     :param hold: if set to True, output is not plotted immediately, but combined with the next plot
 
@@ -433,25 +435,26 @@ def scatter(x, y, marker='.', filled=False, size=6, color=None, title=None, xlab
         _figure = _new_figure(title, width, height, xlabel, ylabel, xlim, ylim, xtype, ytype, interactive)
     x = _np.array(x, ndmin=1, dtype=_np.float, copy=False)
     y = _np.array(y, ndmin=1, dtype=_np.float, copy=False)
+    opts = {} if legend_label is None else {'legend_label': legend_label }
     if color is None:
         color = _colors[_color % len(_colors)]
         _color += 1
     if marker == '.':
-        _figure.circle(x, y, size=size/2, line_color=color, fill_color=color, legend=legend)
+        _figure.circle(x, y, size=size/2, line_color=color, fill_color=color, **opts)
     elif marker == 'o':
-        _figure.circle(x, y, size=size, line_color=color, fill_color=color if filled else None, legend=legend)
+        _figure.circle(x, y, size=size, line_color=color, fill_color=color if filled else None, **opts)
     elif marker == 's':
-        _figure.square(x, y, size=size, line_color=color, fill_color=color if filled else None, legend=legend)
+        _figure.square(x, y, size=size, line_color=color, fill_color=color if filled else None, **opts)
     elif marker == '*':
-        _figure.asterisk(x, y, size=size, line_color=color, fill_color=color if filled else None, legend=legend)
+        _figure.asterisk(x, y, size=size, line_color=color, fill_color=color if filled else None, **opts)
     elif marker == 'x':
-        _figure.x(x, y, size=size, line_color=color, fill_color=color if filled else None, legend=legend)
+        _figure.x(x, y, size=size, line_color=color, fill_color=color if filled else None, **opts)
     elif marker == '+':
-        _figure.cross(x, y, size=size, line_color=color, fill_color=color if filled else None, legend=legend)
+        _figure.cross(x, y, size=size, line_color=color, fill_color=color if filled else None, **opts)
     elif marker == 'd':
-        _figure.diamond(x, y, size=size, line_color=color, fill_color=color if filled else None, legend=legend)
+        _figure.diamond(x, y, size=size, line_color=color, fill_color=color if filled else None, **opts)
     elif marker == '^':
-        _figure.triangle(x, y, size=size, line_color=color, fill_color=color if filled else None, legend=legend)
+        _figure.triangle(x, y, size=size, line_color=color, fill_color=color if filled else None, **opts)
     elif marker is not None:
         _warnings.warn('Bad marker type: '+marker)
     if not hold and not _hold:
@@ -649,7 +652,9 @@ def specgram(x, fs=2, nfft=None, noverlap=None, colormap='Plasma256', clim=None,
         clim = (_np.max(Sxx)-clim, _np.max(Sxx))
     image(Sxx, x=(t[0], t[-1]), y=(f[0], f[-1]), title=title, colormap=colormap, clim=clim, clabel=clabel, xlabel=xlabel, ylabel=ylabel, xlim=xlim, ylim=ylim, width=width, height=height, hold=hold, interactive=interactive)
 
-def psd(x, fs=2, nfft=512, noverlap=None, window='hanning', color=None, style='solid', thickness=1, marker=None, filled=False, size=6, title=None, xlabel='Frequency (Hz)', ylabel='Power spectral density (dB/Hz)', xlim=None, ylim=None, width=None, height=None, legend=None, hold=False, interactive=None):
+def psd(x, fs=2, nfft=512, noverlap=None, window='hanning', color=None, style='solid', thickness=1, marker=None, filled=False,
+        size=6, title=None, xlabel='Frequency (Hz)', ylabel='Power spectral density (dB/Hz)', xlim=None, ylim=None, width=None,
+        height=None, legend_label=None, hold=False, interactive=None):
     """Plot power spectral density of a given time series signal.
 
     :param x: time series signal
@@ -670,7 +675,7 @@ def psd(x, fs=2, nfft=512, noverlap=None, window='hanning', color=None, style='s
     :param ylim: y-axis limits (min, max)
     :param width: figure width in pixels
     :param height: figure height in pixels
-    :param legend: legend text
+    :param legend_label: legend text
     :param interactive: enable interactive tools (pan, zoom, etc) for plot
     :param hold: if set to True, output is not plotted immediately, but combined with the next plot
 
@@ -684,7 +689,10 @@ def psd(x, fs=2, nfft=512, noverlap=None, window='hanning', color=None, style='s
         xlim = (0, fs/2)
     if ylim is None:
         ylim = (_np.max(Pxx)-50, _np.max(Pxx)+10)
-    plot(f, Pxx, color=color, style=style, thickness=thickness, marker=marker, filled=filled, size=size, title=title, xlabel=xlabel, ylabel=ylabel, xlim=xlim, ylim=ylim, maxpts=len(f), width=width, height=height, hold=hold, legend=legend, interactive=interactive)
+    opts = {} if legend_label is None else {'legend_label': legend_label }
+    plot(f, Pxx, color=color, style=style, thickness=thickness, marker=marker, filled=filled, size=size, title=title, xlabel=xlabel,
+            ylabel=ylabel, xlim=xlim, ylim=ylim, maxpts=len(f), width=width, height=height, hold=hold, interactive=interactive,
+            **opts)
 
 def iqplot(data, marker='.', color=None, labels=None, filled=False, size=None, title=None, xlabel=None, ylabel=None, xlim=[-2, 2], ylim=[-2, 2], width=None, height=None, hold=False, interactive=None):
     """Plot signal points.
@@ -765,11 +773,11 @@ def freqz(b, a=1, fs=2.0, worN=None, whole=False, degrees=True, style='solid', t
         ylim = (_np.max(Hxx)-50, _np.max(Hxx)+10)
     figure(title=title, xlabel=xlabel, ylabel='Amplitude (dB)', xlim=xlim, ylim=ylim, width=width, height=height, interactive=interactive)
     _hold_enable(True)
-    plot(f, Hxx, color=color(0), style=style, thickness=thickness, legend='Magnitude')
+    plot(f, Hxx, color=color(0), style=style, thickness=thickness, legend_label='Magnitude')
     fig = gcf()
     units = 180/_np.pi if degrees else 1
     fig.extra_y_ranges = {'phase': _bmodels.Range1d(start=-_np.pi*units, end=_np.pi*units)}
     fig.add_layout(_bmodels.LinearAxis(y_range_name='phase', axis_label='Phase (degrees)' if degrees else 'Phase (radians)'), 'right')
     phase = _np.angle(h)*units
-    fig.line(f, phase, line_color=color(1), line_dash=style, line_width=thickness, legend='Phase', y_range_name='phase')
+    fig.line(f, phase, line_color=color(1), line_dash=style, line_width=thickness, legend_label='Phase', y_range_name='phase')
     _hold_enable(hold)
