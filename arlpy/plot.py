@@ -317,7 +317,9 @@ def gcf():
     """
     return _figure
 
-def plot(x, y=None, fs=None, maxpts=10000, pooling=None, color=None, style='solid', thickness=1, marker=None, filled=False, size=6, mskip=0, title=None, xlabel=None, ylabel=None, xlim=None, ylim=None, xtype='auto', ytype='auto', width=None, height=None, legend=None, hold=False, interactive=None):
+def plot(x, y=None, fs=None, maxpts=10000, pooling=None, color=None, style='solid', thickness=1, marker=None, filled=False, size=6,
+        mskip=0, title=None, xlabel=None, ylabel=None, xlim=None, ylim=None, xtype='auto', ytype='auto', width=None, height=None,
+        legend_label=None, hold=False, interactive=None):
     """Plot a line graph or time series.
 
     :param x: x data or time series data (if y is None)
