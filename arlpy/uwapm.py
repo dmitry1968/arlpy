@@ -552,7 +552,7 @@ class _Bellhop:
         _os.close(fh)
         fname_base = fname[:-4]
         self._unlink(fname_base+'.env')
-        rv = self._bellhop(fname_base)
+        rv = self._bellhop(fname_base, stdout=_proc.DEVNULL, stderr=_proc.DEVNULL)
         self._unlink(fname_base+'.prt')
         self._unlink(fname_base+'.log')
         return rv
@@ -585,9 +585,9 @@ class _Bellhop:
             self._unlink(fname_base+'.shd')
         return results
 
-    def _bellhop(self, *args):
+    def _bellhop(self, fname_base, *, stdout=None, stderr=_proc.STDOUT):
         try:
-            _proc.call(['bellhop.exe'] + list(args), stderr=_proc.STDOUT)
+            _proc.call(['bellhop.exe', fname_base], stdout=stdout, stderr=stderr)
         except OSError:
             return False
         return True
