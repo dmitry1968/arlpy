@@ -749,7 +749,7 @@ class _Bellhop:
                     'bottom_bounces': [bb],
                     'ray': [ray]
                 }))
-        return _pd.concat(rays)
+        return _pd.concat(rays, ignore_index=True)
 
     def _load_shd(self, fname_base):
         with open(fname_base+'.shd', 'rb') as f:
