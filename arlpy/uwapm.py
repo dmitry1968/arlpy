@@ -182,20 +182,23 @@ def print_env(env):
     """
     check_env2d(env)
     keys = ['name'] + sorted(list(env.keys()-['name']))
-    def pretty_print(_dict, keys):
+    def _pretty_print(_dict, keys, offset):
+        space = ' '
         for k in keys:
-            v = _dict(k)
+            v = _dict[k]
             if type(v) == dict:
-                pretty_print(v, sorted(v.keys()))
+                print(f'{k:>{offset}s} :')
+                _pretty_print(v, sorted(v.keys()), offset=offset+20)
                 continue
             v = str(v)
             if '\n' in v:
                 v = v.split('\n')
-                print('%20s : '%(k) + v[0])
+                print(f'{k:>{offset}s} : {v[0]}')
                 for v1 in v[1:]:
-                    print('%20s   '%('') + v1)
+                    print(f'{space:>{offset+3}s}{v1}')
             else:
-                print('%20s : '%(k) + v)
+                print(f'{k:>{offset}s} : {v}')
+    _pretty_print(env, keys, 20)
 
 def plot_env(env, surface_color='dodgerblue', bottom_color='peru', tx_color='orangered', rx_color='midnightblue', rx_plot=None, **kwargs):
     """Plots a visual representation of the environment.
