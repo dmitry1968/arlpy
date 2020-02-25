@@ -285,10 +285,12 @@ def plot_ssp(env, **kwargs):
         color = 0
         _plt.plot(s['soundspeed'][:,0], -s['depth'], xlabel='Soundspeed (m/s)', ylabel='Depth (m)',
                   hold=True, color=_colors[color], **kwargs)
+        _plt.plot(s['soundspeed'][:,0], -s['depth'], hold=True, marker='.', style=None, **kwargs)
         _figure = _plt._figure
         for i, r in enumerate(s['range'][1:]):
             color = (color + 1) % len(_colors)
-            _figure.line(s['soundspeed'][:,i], -s['depth'], line_color=_colors[color], **kwargs)
+            _plt.plot(s['soundspeed'][:,i + 1], -s['depth'], hold=True, color=_colors[color], **kwargs)
+            _plt.plot(s['soundspeed'][:,i + 1], -s['depth'], hold=True, marker='.', style=None, **kwargs)
         _plt._show(_figure)
         _plt._figure = None
         return
