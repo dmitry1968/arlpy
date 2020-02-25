@@ -138,14 +138,26 @@ def check_env2d(env):
             max_depth = _np.max(env['depth'][:,1])
         else:
             max_depth = env['depth']
-        if _np.size(env['soundspeed']) > 1:
-            assert env['soundspeed'].ndim == 2, 'soundspeed must be a scalar or an Nx2 array'
-            assert env['soundspeed'].shape[1] == 2, 'soundspeed must be a scalar or an Nx2 array'
-            assert env['soundspeed'].shape[0] > 3, 'soundspeed profile must have at least 4 points'
-            assert env['soundspeed'][0,0] <= 0, 'First depth in soundspeed array must be 0 m'
-            assert env['soundspeed'][-1,0] >= max_depth, 'Last depth in soundspeed array must be beyond water depth: '+str(max_depth)+' m'
-            assert _np.all(_np.diff(env['soundspeed'][:,0]) > 0), 'Soundspeed array must be strictly monotonic in depth'
-            assert env['soundspeed_interp'] == spline or env['soundspeed_interp'] == linear, 'Invalid interpolation type: '+str(env['soundspeed_interp'])
+        svp = env['soundspeed']
+        if type(svp) == dict:
+            assert 'depth' in svp.keys(), "2D soundspeed must be a dict of {'depth','range','soundspeed'} values"
+            assert 'range' in svp.keys(), "2D soundspeed must be a dict of {'depth','range','soundspeed'} values"
+            assert 'soundspeed' in svp.keys(), "2D soundspeed must be a dict of {'depth','range','soundspeed'} values"
+            assert svp['soundspeed'].shape[0] == len(svp['depth']), "2D sound speed must have the same dimension in depth"
+            assert svp['soundspeed'].shape[1] == len(svp['range']), "2D sound speed must have the same dimension in range"
+            assert svp['depth'][0] <= 0, 'First depth in soundspeed array must be 0 m'
+            assert svp['depth'][-1] >= max_depth, 'Last depth in soundspeed array must be beyond water depth: '+str(max_depth)+' m'
+            assert _np.all(_np.diff(svp['depth']) > 0), 'Soundspeed array must be strictly monotonic in depth'
+            assert _np.all(_np.diff(svp['range']) > 0), 'Soundspeed array must be strictly monotonic in range'
+        else:
+            if _np.size(svp) > 1:
+                assert svp.ndim == 2, 'soundspeed must be a scalar or an Nx2 array'
+                assert svp.shape[1] == 2, 'soundspeed must be a scalar or an Nx2 array'
+                assert svp.shape[0] > 3, 'soundspeed profile must have at least 4 points'
+                assert svp[0,0] <= 0, 'First depth in soundspeed array must be 0 m'
+                assert svp[-1,0] >= max_depth, 'Last depth in soundspeed array must be beyond water depth: '+str(max_depth)+' m'
+                assert _np.all(_np.diff(svp[:,0]) > 0), 'Soundspeed array must be strictly monotonic in depth'
+                assert env['soundspeed_interp'] == spline or env['soundspeed_interp'] == linear, 'Invalid interpolation type: '+str(env['soundspeed_interp'])
         assert _np.max(env['tx_depth']) <= max_depth, 'tx_depth cannot exceed water depth: '+str(max_depth)+' m'
         assert _np.max(env['rx_depth']) <= max_depth, 'rx_depth cannot exceed water depth: '+str(max_depth)+' m'
         assert env['min_angle'] > -90 and env['min_angle'] < 90, 'min_angle must be in range (-90, 90)'
@@ -169,15 +181,20 @@ def print_env(env):
     """
     check_env2d(env)
     keys = ['name'] + sorted(list(env.keys()-['name']))
-    for k in keys:
-        v = str(env[k])
-        if '\n' in v:
-            v = v.split('\n')
-            print('%20s : '%(k) + v[0])
-            for v1 in v[1:]:
-                print('%20s   '%('') + v1)
-        else:
-            print('%20s : '%(k) + v)
+    def pretty_print(_dict, keys):
+        for k in keys:
+            v = _dict(k)
+            if type(v) == dict:
+                pretty_print(v, sorted(v.keys()))
+                continue
+            v = str(v)
+            if '\n' in v:
+                v = v.split('\n')
+                print('%20s : '%(k) + v[0])
+                for v1 in v[1:]:
+                    print('%20s   '%('') + v1)
+            else:
+                print('%20s : '%(k) + v)
 
 def plot_env(env, surface_color='dodgerblue', bottom_color='peru', tx_color='orangered', rx_color='midnightblue', rx_plot=None, **kwargs):
     """Plots a visual representation of the environment.
@@ -258,21 +275,32 @@ def plot_ssp(env, **kwargs):
     >>> pm.plot_ssp(env)
     """
     check_env2d(env)
-    if _np.size(env['soundspeed']) == 1:
+    s = env['soundspeed']
+    if type(s) == dict:
+        _colors = _plt._colors
+        color = 0
+        _plt.plot(s['soundspeed'][:,0], -s['depth'], xlabel='Soundspeed (m/s)', ylabel='Depth (m)',
+                  hold=True, color=_colors[color], **kwargs)
+        _figure = _plt._figure
+        for i, r in enumerate(s['range'][1:]):
+            color = (color + 1) % len(_colors)
+            _figure.line(s['soundspeed'][:,i], -s['depth'], line_color=_colors[color], **kwargs)
+        _plt._show(_figure)
+        _plt._figure = None
+        return
+    if _np.size(s) == 1:
         if _np.size(env['depth']) > 1:
             max_y = _np.max(env['depth'][:,1])
         else:
             max_y = env['depth']
-        _plt.plot([env['soundspeed'], env['soundspeed']], [0, -max_y], xlabel='Soundspeed (m/s)', ylabel='Depth (m)', **kwargs)
+        _plt.plot([s, s], [0, -max_y], xlabel='Soundspeed (m/s)', ylabel='Depth (m)', **kwargs)
     elif env['soundspeed_interp'] == spline:
-        s = env['soundspeed']
         ynew = _np.linspace(_np.min(s[:,0]), _np.max(s[:,0]), 100)
         tck = _interp.splrep(s[:,0], s[:,1], s=0)
         xnew = _interp.splev(ynew, tck, der=0)
         _plt.plot(xnew, -ynew, xlabel='Soundspeed (m/s)', ylabel='Depth (m)', hold=True, **kwargs)
         _plt.plot(s[:,1], -s[:,0], marker='.', style=None, **kwargs)
     else:
-        s = env['soundspeed']
         _plt.plot(s[:,1], -s[:,0], xlabel='Soundspeed (m/s)', ylabel='Depth (m)', **kwargs)
 
 def compute_arrivals(env, model=None, debug=False):
@@ -611,26 +639,47 @@ class _Bellhop:
                 self._print(fh, "%0.4f " % (j), newline=False)
             self._print(fh, "/")
 
+    def _svp_dimension_and_method(self, svp, svp_interp):
+        if type(svp) == dict:
+            return (2, 'Q')
+        else:
+            svp_method = 'S' if svp_interp == spline else 'C'
+            svp_dimension = 0 if _np.size(svp) == 1 else 1
+            return (svp_dimension, svp_method)
+
+    def _create_ssp_file(self, fname, svp):
+        with open( fname, 'wt') as f:
+            print(len(svp['range']), file=f)
+            for r, i in enumerate(svp['range']):
+                print(f'{r:.4f}', file=f)
+                for c in svp['soundspeed'][:,i]:
+                    print(f'{c:.4f}', file=f)
+
     def _create_env_file(self, env, taskcode):
         fh, fname = _mkstemp(suffix='.env')
         fname_base = fname[:-4]
         self._print(fh, "'"+env['name']+"'")
         self._print(fh, "%0.4f" % (env['frequency']))
         self._print(fh, "1")
+        svp_dimension, svp_method = self._svp_dimension_and_method(env['soundspeed'], env['soundspeed_interp'])
         if env['surface'] is None:
-            self._print(fh, "'%cVWT'" % ('S' if env['soundspeed_interp'] == spline else 'C'))
+            self._print(fh, "'%cVWT'" % svp_method)
         else:
-            self._print(fh, "'%cVWT*'" % ('S' if env['soundspeed_interp'] == spline else 'C'))
+            self._print(fh, "'%cVWT*'" % svp_method)
             self._create_bty_ati_file(fname_base+'.ati', env['surface'], env['surface_interp'])
         max_depth = env['depth'] if _np.size(env['depth']) == 1 else _np.max(env['depth'][:,1])
         self._print(fh, "1 0.0 %0.4f" % (max_depth))
         svp = env['soundspeed']
-        if _np.size(svp) == 1:
+        if svp_dimension == 0:
             self._print(fh, "0.0 %0.4f /" % (svp))
             self._print(fh, "%0.4f %0.4f /" % (max_depth, svp))
-        else:
+        elif svp_dimension == 1:
             for j in range(svp.shape[0]):
                 self._print(fh, "%0.4f %0.4f /" % (svp[j,0], svp[j,1]))
+        else:
+            for d, c in zip(svp['depth'], svp['soundspeed'][:,0]):
+                self._print(fh, "%0.4f %0.4f /" % (d, c))
+            self._create_ssp_file(fname_base + '.ssp', svp)
         depth = env['depth']
         if _np.size(depth) == 1:
             self._print(fh, "'A' %0.4f" % (env['bottom_roughness']))
