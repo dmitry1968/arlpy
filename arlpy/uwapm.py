@@ -140,6 +140,7 @@ def check_env2d(env):
             max_depth = env['depth']
         svp = env['soundspeed']
         if type(svp) == dict:
+            env['soundspeed_interp'] = 'quadrilateral'
             assert 'depth' in svp.keys(), "2D soundspeed must be a dict of {'depth','range','soundspeed'} values"
             assert 'range' in svp.keys(), "2D soundspeed must be a dict of {'depth','range','soundspeed'} values"
             assert 'soundspeed' in svp.keys(), "2D soundspeed must be a dict of {'depth','range','soundspeed'} values"
