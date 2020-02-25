@@ -656,10 +656,9 @@ class _Bellhop:
     def _create_ssp_file(self, fname, svp):
         with open( fname, 'wt') as f:
             print(len(svp['range']), file=f)
-            for r, i in enumerate(svp['range']):
-                print(f'{r:.4f}', file=f)
-                for c in svp['soundspeed'][:,i]:
-                    print(f'{c:.4f}', file=f)
+            print('  '.join([f'{r:.4f}' for r in svp['range']]), file=f)
+            for j in range(len(svp['depth'])):
+                print('  '.join([f'{c:.4f}' for c in svp['soundspeed'][j,:]]), file=f)
 
     def _create_env_file(self, env, taskcode):
         fh, fname = _mkstemp(suffix='.env')
