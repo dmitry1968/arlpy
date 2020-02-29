@@ -617,6 +617,7 @@ class _Bellhop:
             self._unlink(fname_base+'.arr')
             self._unlink(fname_base+'.ray')
             self._unlink(fname_base+'.shd')
+            self._unlink(fname_base+'.ssp')
         return results
 
     def _bellhop(self, fname_base, *, stdout=None, stderr=_proc.STDOUT):
