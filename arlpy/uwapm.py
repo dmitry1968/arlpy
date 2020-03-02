@@ -657,7 +657,8 @@ class _Bellhop:
     def _create_ssp_file(self, fname, svp):
         with open( fname, 'wt') as f:
             print(len(svp['range']), file=f)
-            print('  '.join([f'{r:.4f}' for r in svp['range']]), file=f)
+            # the ranges must be in km
+            print('  '.join([f'{0.001*r:.4f}' for r in svp['range']]), file=f)
             for j in range(len(svp['depth'])):
                 print('  '.join([f'{c:.4f}' for c in svp['soundspeed'][j,:]]), file=f)
 
