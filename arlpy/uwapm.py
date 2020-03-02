@@ -462,12 +462,14 @@ def plot_arrivals(arrivals, dB=False, color='blue', **kwargs):
         _plt.plot([t, t], [min_y, y], xlabel='Arrival time (s)', ylabel=ylabel, ylim=[min_y, min_y+70], color=color, **kwargs)
     _plt.hold(oh)
 
-def plot_rays(rays, env=None, invert_colors=False, **kwargs):
+def plot_rays(rays, env=None, invert_colors=False, lightest=200, **kwargs):
     """Plots ray paths.
 
     :param rays: ray paths
     :param env: environment definition
     :param invert_colors: False to use black for high intensity rays, True to use white
+    :param lightest: RGB value for the ray with maximal count of bottom bounces (presumably
+        the weakest ray)
 
     If environment definition is provided, it is overlayed over this plot using default
     parameters for `arlpy.uwapm.plot_env()`.
@@ -493,7 +495,7 @@ def plot_rays(rays, env=None, invert_colors=False, **kwargs):
         xlabel = 'Range (km)'
     oh = _plt.hold()
     for _, row in rays.iterrows():
-        c = int(255*_np.abs(row.bottom_bounces)/max_amp)
+        c = int(lightest * _np.abs(row.bottom_bounces) / max_amp)
         if invert_colors:
             c = 255-c
         c = _bokeh.colors.RGB(c, c, c)
