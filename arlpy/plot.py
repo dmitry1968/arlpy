@@ -346,6 +346,7 @@ def plot(x, y=None, fs=None, maxpts=10000, pooling=None, color=None, style='soli
     :param legend_label: legend text
     :param interactive: enable interactive tools (pan, zoom, etc) for plot
     :param hold: if set to True, output is not plotted immediately, but combined with the next plot
+    :returns: figure handle
 
     >>> import arlpy.plot
     >>> import numpy as np
@@ -399,9 +400,11 @@ def plot(x, y=None, fs=None, maxpts=10000, pooling=None, color=None, style='soli
         _figure.line(x, y, line_color=color, line_dash=style, line_width=thickness, **opts)
     if marker is not None:
         scatter(x[::(mskip+1)], y[::(mskip+1)], marker=marker, filled=filled, size=size, color=color, hold=True, **opts)
+    rv = _figure
     if not hold and not _hold:
         _show(_figure)
         _figure = None
+    return rv
 
 def scatter(x, y, marker='.', filled=False, size=6, color=None, title=None, xlabel=None, ylabel=None, xlim=None, ylim=None,
         xtype='auto', ytype='auto', width=None, height=None, legend_label=None, hold=False, interactive=None):

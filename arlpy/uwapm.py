@@ -211,6 +211,7 @@ def plot_env(env, surface_color='dodgerblue', bottom_color='peru', tx_color='ora
     :param tx_color: color of transmitters (see `Bokeh colors <https://bokeh.pydata.org/en/latest/docs/reference/colors.html>`_)
     :param rx_color: color of receviers (see `Bokeh colors <https://bokeh.pydata.org/en/latest/docs/reference/colors.html>`_)
     :param rx_plot: True to plot all receivers, False to not plot any receivers, None to automatically decide
+    :returns: figure handle
 
     Other keyword arguments applicable for `arlpy.plot.plot()` are also supported.
 
@@ -245,19 +246,24 @@ def plot_env(env, surface_color='dodgerblue', bottom_color='peru', tx_color='ora
     mgn_y = 0.1*(max_y-min_y)
     oh = _plt.hold()
     if env['surface'] is None:
-        _plt.plot([min_x, max_x], [0, 0], xlabel=xlabel, ylabel='Depth (m)', xlim=(min_x-mgn_x, max_x+mgn_x), ylim=(-max_y-mgn_y, -min_y+mgn_y), color=surface_color, **kwargs)
+        _plt.plot([min_x, max_x], [0, 0], xlabel=xlabel, ylabel='Depth (m)',
+                  xlim=(min_x-mgn_x, max_x+mgn_x), ylim=(-max_y-mgn_y, -min_y+mgn_y),
+                  color=surface_color, hold=True, **kwargs)
     else:
         # linear and curvilinear options use the same altimetry, just with different normals
         s = env['surface']
-        _plt.plot(s[:,0]/divisor, -s[:,1], xlabel=xlabel, ylabel='Depth (m)', xlim=(min_x-mgn_x, max_x+mgn_x), ylim=(-max_y-mgn_y, -min_y+mgn_y), color=surface_color, **kwargs)
+        _plt.plot(s[:,0]/divisor, -s[:,1], xlabel=xlabel, ylabel='Depth (m)',
+                  xlim=(min_x-mgn_x, max_x+mgn_x), ylim=(-max_y-mgn_y, -min_y+mgn_y),
+                  color=surface_color, hold=True, **kwargs)
     if _np.size(env['depth']) == 1:
-        _plt.plot([min_x, max_x], [-env['depth'], -env['depth']], color=bottom_color)
+        _plt.plot([min_x, max_x], [-env['depth'], -env['depth']], color=bottom_color,
+                  hold=True)
     else:
         # linear and curvilinear options use the same bathymetry, just with different normals
         s = env['depth']
-        _plt.plot(s[:,0]/divisor, -s[:,1], color=bottom_color)
+        _plt.plot(s[:,0]/divisor, -s[:,1], color=bottom_color, hold=True)
     txd = env['tx_depth']
-    _plt.plot([0]*_np.size(txd), -txd, marker='*', style=None, color=tx_color)
+    _plt.plot([0]*_np.size(txd), -txd, marker='*', style=None, color=tx_color, hold=True)
     if rx_plot is None:
         rx_plot = _np.size(env['rx_depth'])*_np.size(env['rx_range']) < 2000
     if rx_plot:
@@ -266,13 +272,17 @@ def plot_env(env, surface_color='dodgerblue', bottom_color='peru', tx_color='ora
             rxr = [rxr]
         for r in _np.array(rxr):
             rxd = env['rx_depth']
-            _plt.plot([r/divisor]*_np.size(rxd), -rxd, marker='o', style=None, color=rx_color)
+            _plt.plot([r/divisor]*_np.size(rxd), -rxd, marker='o', style=None, color=rx_color,
+                      hold=True)
+    rv = _plt._figure
     _plt.hold(oh)
+    return rv
 
 def plot_ssp(env, **kwargs):
     """Plots the sound speed profile.
 
     :param env: environment description
+    :returns: figure handle
 
     Other keyword arguments applicable for `arlpy.plot.plot()` are also supported.
 
@@ -295,21 +305,21 @@ def plot_ssp(env, **kwargs):
             _plt.plot(s['soundspeed'][:,i + 1], -s['depth'], hold=True, marker='.', style=None, **kwargs)
         _plt._show(_figure)
         _plt._figure = None
-        return
+        return _figure
     if _np.size(s) == 1:
         if _np.size(env['depth']) > 1:
             max_y = _np.max(env['depth'][:,1])
         else:
             max_y = env['depth']
-        _plt.plot([s, s], [0, -max_y], xlabel='Soundspeed (m/s)', ylabel='Depth (m)', **kwargs)
+        return _plt.plot([s, s], [0, -max_y], xlabel='Soundspeed (m/s)', ylabel='Depth (m)', **kwargs)
     elif env['soundspeed_interp'] == spline:
         ynew = _np.linspace(_np.min(s[:,0]), _np.max(s[:,0]), 100)
         tck = _interp.splrep(s[:,0], s[:,1], s=0)
         xnew = _interp.splev(ynew, tck, der=0)
         _plt.plot(xnew, -ynew, xlabel='Soundspeed (m/s)', ylabel='Depth (m)', hold=True, **kwargs)
-        _plt.plot(s[:,1], -s[:,0], marker='.', style=None, **kwargs)
+        return _plt.plot(s[:,1], -s[:,0], marker='.', style=None, **kwargs)
     else:
-        _plt.plot(s[:,1], -s[:,0], xlabel='Soundspeed (m/s)', ylabel='Depth (m)', **kwargs)
+        return _plt.plot(s[:,1], -s[:,0], xlabel='Soundspeed (m/s)', ylabel='Depth (m)', **kwargs)
 
 def compute_arrivals(env, model=None, debug=False):
     """Compute arrivals between each transmitter and receiver.
@@ -438,6 +448,7 @@ def plot_arrivals(arrivals, dB=False, color='blue', **kwargs):
     :param arrivals: arrivals times (s) and coefficients
     :param dB: True to plot in dB, False for linear scale
     :param color: line color (see `Bokeh colors <https://bokeh.pydata.org/en/latest/docs/reference/colors.html>`_)
+    :returns: figure handle
 
     Other keyword arguments applicable for `arlpy.plot.plot()` are also supported.
 
@@ -462,7 +473,9 @@ def plot_arrivals(arrivals, dB=False, color='blue', **kwargs):
         if dB:
             y = max(20*_np.log10(_fi.epsilon+y), min_y)
         _plt.plot([t, t], [min_y, y], xlabel='Arrival time (s)', ylabel=ylabel, ylim=[min_y, min_y+70], color=color, **kwargs)
+    rv = _plt._figure
     _plt.hold(oh)
+    return rv
 
 def plot_rays(rays, env=None, invert_colors=False, lightest=200, **kwargs):
     """Plots ray paths.
@@ -472,6 +485,7 @@ def plot_rays(rays, env=None, invert_colors=False, lightest=200, **kwargs):
     :param invert_colors: False to use black for high intensity rays, True to use white
     :param lightest: RGB value for the ray with maximal count of bottom bounces (presumably
         the weakest ray)
+    :returns: figure handle
 
     If environment definition is provided, it is overlayed over this plot using default
     parameters for `arlpy.uwapm.plot_env()`.
@@ -501,16 +515,20 @@ def plot_rays(rays, env=None, invert_colors=False, lightest=200, **kwargs):
         if invert_colors:
             c = 255-c
         c = _bokeh.colors.RGB(c, c, c)
-        _plt.plot(row.ray[:,0]/divisor, -row.ray[:,1], color=c, xlabel=xlabel, ylabel='Depth (m)', **kwargs)
+        _plt.plot(row.ray[:,0]/divisor, -row.ray[:,1], color=c, xlabel=xlabel, ylabel='Depth (m)',
+                  hold=True, **kwargs)
     if env is not None:
-        plot_env(env)
+        _ = plot_env(env)
+    rv = _plt._figure
     _plt.hold(oh)
+    return rv
 
 def plot_transmission_loss(tloss, env=None, **kwargs):
     """Plots transmission loss.
 
     :param tloss: complex transmission loss
     :param env: environment definition
+    :returns: figure handle
 
     If environment definition is provided, it is overlayed over this plot using default
     parameters for `arlpy.uwapm.plot_env()`.
@@ -535,10 +553,13 @@ def plot_transmission_loss(tloss, env=None, **kwargs):
         xr = (min(tloss.columns)/1000, max(tloss.columns)/1000)
         xlabel = 'Range (km)'
     oh = _plt.hold()
-    _plt.image(20*_np.log10(_fi.epsilon+_np.abs(_np.flipud(_np.array(tloss)))), x=xr, y=yr, xlabel=xlabel, ylabel='Depth (m)', xlim=xr, ylim=yr, **kwargs)
+    _plt.image(20*_np.log10(_fi.epsilon+_np.abs(_np.flipud(_np.array(tloss)))), x=xr, y=yr,
+               xlabel=xlabel, ylabel='Depth (m)', xlim=xr, ylim=yr, hold=True, **kwargs)
     if env is not None:
-        plot_env(env, rx_plot=False)
+        _ = plot_env(env, rx_plot=False)
+    rv = _plt._figure
     _plt.hold(oh)
+    return rv
 
 def models(env=None, task=None):
     """List available models.
