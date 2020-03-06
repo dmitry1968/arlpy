@@ -146,8 +146,10 @@ def check_env2d(env):
             assert 'soundspeed' in svp.keys(), "2D soundspeed must be a dict of {'depth','range','soundspeed'} values"
             assert svp['soundspeed'].shape[0] == len(svp['depth']), "2D sound speed must have the same dimension in depth"
             assert svp['soundspeed'].shape[1] == len(svp['range']), "2D sound speed must have the same dimension in range"
-            assert svp['depth'][0] <= 0, 'First depth in soundspeed array must be 0 m'
+            assert svp['depth'][0] <= 0, 'First depth in soundspeed array must be 0 m or less'
             assert svp['depth'][-1] >= max_depth, 'Last depth in soundspeed array must be beyond water depth: '+str(max_depth)+' m'
+            assert svp['range'][0] <= 0, f'First range in 2D sound speed field must be 0 m or less'
+            assert svp['range'][-1] >= max_range, f'Last range in 2D sound speed field must be beyond maximum range {max_range} m'
             assert _np.all(_np.diff(svp['depth']) > 0), 'Soundspeed array must be strictly monotonic in depth'
             assert _np.all(_np.diff(svp['range']) > 0), 'Soundspeed array must be strictly monotonic in range'
         else:
