@@ -50,7 +50,7 @@ def stft(x, nfft, overlap=0, window=None):
         x = _np.reshape(x[:,:m], (n, -1, nfft))
     elif overlap > 0 and overlap < nfft:
         p = (m-overlap)//(nfft-overlap)
-        y = _np.empty((n, p, nfft))
+        y = _np.empty((n, p, nfft), dtype=x.dtype)
         for j in range(p):
             y[:,j,:] = x[:,(nfft-overlap)*j:(nfft-overlap)*j+nfft]
         x = y
@@ -271,7 +271,8 @@ def capon(x, fc, sd, complex_output=False):
             R += _np.random.normal(0, _np.max(_np.abs(R))/1000000, R.shape)
         return _np.array([1.0/a[j].conj().dot(_np.linalg.inv(R)).dot(a[j]).real for j in range(a.shape[0])])
 
-def broadband(x, fs, nfft, sd, f0=0, fmin=None, fmax=None, overlap=0, beamformer=bartlett):
+def broadband(x, fs, nfft, sd, f0=0, fmin=None, fmax=None, overlap=0, beamformer=bartlett,
+              complex_output=False):
     """Frequency-domain broadband beamformer operating on time-domain input data.
 
     The broadband beamformer is implementing by taking STFT of the data, applying narrowband
@@ -297,6 +298,8 @@ def broadband(x, fs, nfft, sd, f0=0, fmin=None, fmax=None, overlap=0, beamformer
     :param fmax: maximum frequency to integrate (Hz)
     :param overlap: window overlap for STFT
     :param beamformer: narrowband beamformer to use
+    :param complex_output: return spectral power across all beams if False, otherwise
+                           return raw fft bins
     :returns: beamformer output with steering directions as the first axis, time as the second,
               and if complex output, fft bins as the third
 
@@ -316,4 +319,7 @@ def broadband(x, fs, nfft, sd, f0=0, fmin=None, fmax=None, overlap=0, beamformer
         f = f0 + f*float(fs)/nfft
         if (fmin is None or f >= fmin) and (fmax is None or f <= fmax):
             bfo[:,:,i] = nyq*beamformer(x[:,:,i], f, sd, complex_output=True)
-    return (_np.abs(bfo)**2).sum(axis=-1)
+    if complex_output:
+        return bfo
+    else:
+        return (_np.abs(bfo)**2).sum(axis=-1)
