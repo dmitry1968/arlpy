@@ -316,7 +316,9 @@ def broadband(x, fs, nfft, sd, *, window=None, f0=0, fmin=None, fmax=None, overl
     if nfft/fs < (_np.max(sd)-_np.min(sd)):
         raise ValueError('nfft too small for this array')
     nyq = 2 if f0 == 0 and _np.sum(_np.abs(x.imag)) == 0 else 1
-    x = stft(x, nfft, overlap, window)
+    window = window if window is not None else 'hann'
+    freqs, times, x = _sig.stft(x, fs, window, nfft, noverlap=overlap, return_onesided=False)
+    x = _np.swapaxes(x, 1, 2)
     bfo = _np.zeros((sd.shape[0], x.shape[1], nfft//nyq), dtype=_np.complex)
     for i in range(nfft//nyq):
         f = i if i < nfft/2 else i-nfft
