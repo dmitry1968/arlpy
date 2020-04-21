@@ -57,7 +57,11 @@ def stft(x, nfft, overlap=0, window=None):
     else:
         raise ValueError('overlap must be in the range [0,nfft)')
     if window is not None:
-        x *= _sig.get_window(window, nfft)
+        try:
+            w = _sig.get_window(window, nfft)
+        except ValueError:
+            w = window
+        x *= w
     x = _np.fft.fft(x, axis=-1)
     return x
 
@@ -271,8 +275,8 @@ def capon(x, fc, sd, complex_output=False):
             R += _np.random.normal(0, _np.max(_np.abs(R))/1000000, R.shape)
         return _np.array([1.0/a[j].conj().dot(_np.linalg.inv(R)).dot(a[j]).real for j in range(a.shape[0])])
 
-def broadband(x, fs, nfft, sd, *, f0=0, fmin=None, fmax=None, overlap=0, beamformer=bartlett,
-              complex_output=False):
+def broadband(x, fs, nfft, sd, *, window=None, f0=0, fmin=None, fmax=None, overlap=0,
+              beamformer=bartlett, complex_output=False):
     """Frequency-domain broadband beamformer operating on time-domain input data.
 
     The broadband beamformer is implementing by taking STFT of the data, applying narrowband
@@ -292,6 +296,7 @@ def broadband(x, fs, nfft, sd, *, f0=0, fmin=None, fmax=None, overlap=0, beamfor
     :param fs: sampling rate for array data (Hz)
     :param nfft: STFT window size
     :param sd: steering distances (m)
+    :param window: if not None, an array of weights to apply to each stft frame
     :param f0: carrier frequency (for baseband data) (Hz)
     :param fmin: minimum frequency to integrate (Hz)
     :param fmax: maximum frequency to integrate (Hz)
@@ -311,7 +316,7 @@ def broadband(x, fs, nfft, sd, *, f0=0, fmin=None, fmax=None, overlap=0, beamfor
     if nfft/fs < (_np.max(sd)-_np.min(sd)):
         raise ValueError('nfft too small for this array')
     nyq = 2 if f0 == 0 and _np.sum(_np.abs(x.imag)) == 0 else 1
-    x = stft(x, nfft, overlap)
+    x = stft(x, nfft, overlap, window)
     bfo = _np.zeros((sd.shape[0], x.shape[1], nfft//nyq), dtype=_np.complex)
     for i in range(nfft//nyq):
         f = i if i < nfft/2 else i-nfft
