@@ -290,7 +290,6 @@ def broadband(x, fs, nfft, sd, f0=0, fmin=None, fmax=None, overlap=0, beamformer
 
     :param x: timeseries data for multiple sensors (row per sensor)
     :param fs: sampling rate for array data (Hz)
-    :param c: wave propagation speed (m/s)
     :param nfft: STFT window size
     :param sd: steering distances (m)
     :param f0: carrier frequency (for baseband data) (Hz)
