@@ -32,39 +32,6 @@ def normalize(x, unit_variance=True):
     v[v == 0] = 1
     return s*(x-m)/_np.sqrt(v)
 
-def stft(x, nfft, overlap=0, window=None):
-    """Compute short time Fourier transform (STFT) of array data.
-
-    :param x: passband real timeseries data for multiple sensors (row per sensor)
-    :param nfft: window length in samples
-    :param overlap: number of samples of overlap between windows
-    :param window: window function to use (None means rectangular window)
-    :returns: 3d array of time x frequency x sensor
-
-    For supported window functions, see documentation for :func:`scipy.signal.get_window`.
-    """
-    n, m = x.shape
-    if overlap == 0:
-        if m % nfft != 0:
-            m = (m//nfft)*nfft
-        x = _np.reshape(x[:,:m], (n, -1, nfft))
-    elif overlap > 0 and overlap < nfft:
-        p = (m-overlap)//(nfft-overlap)
-        y = _np.empty((n, p, nfft), dtype=x.dtype)
-        for j in range(p):
-            y[:,j,:] = x[:,(nfft-overlap)*j:(nfft-overlap)*j+nfft]
-        x = y
-    else:
-        raise ValueError('overlap must be in the range [0,nfft)')
-    if window is not None:
-        try:
-            w = _sig.get_window(window, nfft)
-        except ValueError:
-            w = window
-        x *= w
-    x = _np.fft.fft(x, axis=-1)
-    return x
-
 def steering_plane_wave(pos, c, theta):
     """Compute steering delays assuming incoming signal has a plane wavefront.
 
@@ -296,7 +263,7 @@ def broadband(x, fs, nfft, sd, *, window=None, f0=0, fmin=None, fmax=None, overl
     :param fs: sampling rate for array data (Hz)
     :param nfft: STFT window size
     :param sd: steering distances (m)
-    :param window: if not None, an array of weights to apply to each stft frame
+    :param window: if not None, an array of weights to apply to each STFT frame
     :param f0: carrier frequency (for baseband data) (Hz)
     :param fmin: minimum frequency to integrate (Hz)
     :param fmax: maximum frequency to integrate (Hz)
