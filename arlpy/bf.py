@@ -271,7 +271,7 @@ def capon(x, fc, sd, complex_output=False):
             R += _np.random.normal(0, _np.max(_np.abs(R))/1000000, R.shape)
         return _np.array([1.0/a[j].conj().dot(_np.linalg.inv(R)).dot(a[j]).real for j in range(a.shape[0])])
 
-def broadband(x, fs, nfft, sd, f0=0, fmin=None, fmax=None, overlap=0, beamformer=bartlett,
+def broadband(x, fs, nfft, sd, *, f0=0, fmin=None, fmax=None, overlap=0, beamformer=bartlett,
               complex_output=False):
     """Frequency-domain broadband beamformer operating on time-domain input data.
 
